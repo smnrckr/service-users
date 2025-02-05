@@ -1,26 +1,49 @@
 package services
 
 import (
-	"fmt"
+	"encoding/json"
 	"staj-resftul/internal/models"
 	"staj-resftul/internal/repositories"
+	"staj-resftul/pkg/redis"
+	"time"
 )
 
 type UserService struct {
 	userRepository *repositories.UserRepository
+	redisDB        *redis.RedisDB
 }
 
-func NewUserService(repository *repositories.UserRepository) *UserService {
+func NewUserService(repository *repositories.UserRepository, redisdb *redis.RedisDB) *UserService {
 	return &UserService{
 		userRepository: repository,
+		redisDB:        redisdb,
 	}
 }
 
 func (s *UserService) GetUsers() ([]models.User, error) {
+	redisResult := s.redisDB.RedisClient.Get("users")
+	users := []models.User{}
+	json.Unmarshal([]byte(redisResult.String()), &users)
+
+	if len(users) != 0 {
+		return users, nil
+	}
+
 	result, err := s.userRepository.GetUsers()
 	if err != nil {
-		fmt.Println(err)
+		return []models.User{}, err
 	}
+
+	data, err := json.Marshal(result)
+	if err != nil {
+		return []models.User{}, err
+	}
+
+	err = s.redisDB.RedisClient.Set("users", data, time.Minute*5).Err()
+	if err != nil {
+		return []models.User{}, err
+	}
+
 	return result, nil
 }
 
