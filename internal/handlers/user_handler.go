@@ -36,7 +36,7 @@ func (h *UserHandler) handleCreateUser(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Geçersiz JSON verisi"})
 	}
-	user := models.User{Name: userRequest.Name, Lastname: userRequest.Lastname}
+	user := models.User{Name: userRequest.Name, Lastname: userRequest.Lastname, ProfilePhoto: userRequest.ProfilePhoto}
 	err = h.userService.CreateUser(&user)
 	if err != nil {
 		fmt.Println(err)
@@ -77,6 +77,9 @@ func (h *UserHandler) handleUpdateUser(c *fiber.Ctx) error {
 	}
 	if userRequest.Lastname != "" {
 		updatedData["lastname"] = userRequest.Lastname
+	}
+	if userRequest.ProfilePhoto != "" {
+		updatedData["profile_photo"] = userRequest.ProfilePhoto
 	}
 
 	err = h.userService.UpdateUser(id, updatedData)
