@@ -63,7 +63,7 @@ func (c *UserRepository) UpdateUser(id int, updatedData map[string]interface{}) 
 //docker kullan TAMAM
 //gerçek dbye bağlan TAMAM
 //db özelliklerini elle yazmak yerin env. dosyasından al TAMAM, unit test ekle, swagger ekle
-//2.gün -> user her profil sayfasına gittiğinde dbye gitmek yerine redis'te cashlensin, (rediste varsa yoksa dbden okuyup redise yazsın)
+//2.gün -> user her profil sayfasına gittiğinde dbye gitmek yerine redis'te cashlensin TAMAM, (rediste varsa yoksa dbden okuyup redise yazsın)
 //dosya s3'e nasıl yüklenir bak
 //3.gün -> amazonda makine oluştur, redis kur, postgrl sql olutur, amazonda çalışır hale getir
 //4.gün -> CI/CD github action kullanarak oto deploy yap
