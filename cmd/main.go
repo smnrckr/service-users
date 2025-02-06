@@ -8,10 +8,9 @@ import (
 	"staj-resftul/internal/services"
 	"staj-resftul/pkg/postgresql"
 	"staj-resftul/pkg/redis"
+	"staj-resftul/pkg/s3storage"
 	"staj-resftul/utils"
 	"strconv"
-
-	//"github.com/go-redis/redis/v8"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -28,6 +27,8 @@ func main() {
 	dbpassword := os.Getenv("PASSWORD")
 	port := os.Getenv("PORT")
 
+	db := postgresql.NewDB(postgresql.DbConfig{Host: host, Dbuser: dbuser, Dbname: dbname, Dbpassword: dbpassword, Port: port})
+
 	redisHost := os.Getenv("REDIS_HOST")
 	redisPort := os.Getenv("REDIS_PORT")
 	redisPassword := os.Getenv("REDIS_PASSWORD")
@@ -42,10 +43,17 @@ func main() {
 		Db:       redisDB,
 	})
 
-	db := postgresql.NewDB(postgresql.DbConfig{Host: host, Dbuser: dbuser, Dbname: dbname, Dbpassword: dbpassword, Port: port})
+	accessKey := os.Getenv("AWS_ACCESS_KEY_ID")
+	secretKey := os.Getenv("AWS_SECRET_ACCESS_KEY")
+	region := os.Getenv("AWS_REGION")
+
+	s3, err := s3storage.NewS3Service(&s3storage.S3Config{AccessKey: accessKey, SecretAccessKey: secretKey, Region: region})
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	userRepository := repositories.NewUserRepository(db)
-	userService := services.NewUserService(userRepository, rdb)
+	userService := services.NewUserService(userRepository, rdb, s3)
 	userHandler := handlers.NewUserHandler(userService)
 	app := fiber.New()
 

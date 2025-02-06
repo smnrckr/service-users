@@ -31,15 +31,15 @@ func (h *UserHandler) handleGetUsers(c *fiber.Ctx) error {
 }
 
 func (h *UserHandler) handleCreateUser(c *fiber.Ctx) error {
-	userRequest := models.UserCreateRequest{}
-	err := c.BodyParser(&userRequest)
-	if err != nil {
+	userRequest := new(models.UserCreateRequest)
+	if err := c.BodyParser(userRequest); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Geçersiz JSON verisi"})
 	}
-	user := models.User{Name: userRequest.Name, Lastname: userRequest.Lastname, ProfilePhoto: userRequest.ProfilePhoto}
-	err = h.userService.CreateUser(&user)
+
+	file, _ := c.FormFile("profile_photo")
+
+	user, err := h.userService.CreateUser(userRequest, file)
 	if err != nil {
-		fmt.Println(err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
