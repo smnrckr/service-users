@@ -33,3 +33,5 @@ func NewClient(config RedisConfig) *RedisDB {
 
 	return &RedisDB{RedisClient: rdb}
 }
+
+//redisin metodları sarmallanabilirdi

@@ -10,20 +10,12 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
 type S3Config struct {
 	AccessKey       string
 	SecretAccessKey string
 	Region          string
-}
-
-type S3UploadInfo struct {
-	BucketName string
-	Key        string
-	Body       []byte
-	ACL        types.ObjectCannedACL
 }
 
 type S3Service struct {
@@ -43,19 +35,18 @@ func NewS3Service(cfg *S3Config) (*S3Service, error) {
 	return &S3Service{Client: client}, nil
 }
 
-func (s *S3Service) UploadFile(dataInfo S3UploadInfo) (string, error) {
+func (s *S3Service) UploadFile(BucketName string, Key string, Body []byte) (string, error) {
 	uploader := manager.NewUploader(s.Client)
 
 	_, err := uploader.Upload(context.TODO(), &s3.PutObjectInput{
-		Bucket: aws.String(dataInfo.BucketName),
-		Key:    aws.String(dataInfo.Key),
-		Body:   bytes.NewReader(dataInfo.Body),
-		ACL:    dataInfo.ACL,
+		Bucket: aws.String(BucketName),
+		Key:    aws.String(Key),
+		Body:   bytes.NewReader(Body),
 	})
 	if err != nil {
 		return "", err
 	}
 
-	fileURL := fmt.Sprintf("https://%s.s3.amazonaws.com/%s", dataInfo.BucketName, dataInfo.Key)
+	fileURL := fmt.Sprintf("https://%s.s3.amazonaws.com/%s", BucketName, Key)
 	return fileURL, nil
 }

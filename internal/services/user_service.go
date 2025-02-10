@@ -9,8 +9,6 @@ import (
 	"staj-resftul/pkg/redis"
 	"staj-resftul/pkg/s3storage"
 	"time"
-
-	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
 type UserService struct {
@@ -71,12 +69,7 @@ func (s *UserService) CreateUser(req *models.UserCreateRequest, file *multipart.
 		}
 
 		fileKey := fmt.Sprintf("profile_photos/%d_%s", time.Now().Unix(), file.Filename)
-		fileURL, err = s.s3Service.UploadFile(s3storage.S3UploadInfo{
-			BucketName: "cimristaj",
-			Key:        fileKey,
-			Body:       fileBytes,
-			ACL:        types.ObjectCannedACLPublicRead,
-		})
+		fileURL, err = s.s3Service.UploadFile("cimristaj", fileKey, fileBytes)
 		if err != nil {
 			return nil, err
 		}

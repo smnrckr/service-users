@@ -20,3 +20,4 @@ type UserUpdateRequest struct {
 	Lastname     string `json:"lastname"`
 	ProfilePhoto string `json:"profile_photo"`
 }
+ 
