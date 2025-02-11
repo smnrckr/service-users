@@ -52,6 +52,29 @@ func (s *UserService) GetUsers() ([]models.User, error) {
 	return result, nil
 }
 
+func (s *UserService) GetUserById(userId int) (*models.User, error) {
+
+	redisResult, err := s.redisDB.RedisClient.Get("users").Result()
+	users := []models.User{}
+	if err == nil && redisResult != "" {
+		if err := json.Unmarshal([]byte(redisResult), &users); err == nil {
+			for _, user := range users {
+				if user.Id == userId {
+					return &user, nil
+				}
+			}
+		}
+	}
+
+	user, err := s.userRepository.GetUserById(userId)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+
+}
+
 func (s *UserService) CreateUser(req *models.UserCreateRequest, file *multipart.FileHeader) (*models.User, error) {
 	var fileURL string
 

@@ -30,6 +30,15 @@ func (r *UserRepository) GetUsers() ([]models.User, error) {
 	return users, nil
 }
 
+func (r *UserRepository) GetUserById(userId int) (*models.User, error) {
+	user := models.User{}
+	result := r.storage.GetConnection().Table("users").First(&user, "id = ? ", userId)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return &user, nil
+}
+
 func (c *UserRepository) CreateUser(newUser *models.User) error {
 
 	result := c.storage.GetConnection().Table("users").Create(&newUser)

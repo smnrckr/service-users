@@ -30,6 +30,24 @@ func (h *UserHandler) handleGetUsers(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"data": user})
 }
 
+func (h *UserHandler) handleGetUserById(c *fiber.Ctx) error {
+	userId, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Geçersiz kullanıcı ID"})
+	}
+
+	user, err := h.userService.GetUserById(userId)
+
+	if err != nil {
+		fmt.Println(err)
+		if err != nil {
+			fmt.Println(err)
+			c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err})
+		}
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"data": user})
+}
+
 func (h *UserHandler) handleCreateUser(c *fiber.Ctx) error {
 	userRequest := new(models.UserCreateRequest)
 	if err := c.BodyParser(userRequest); err != nil {
@@ -93,6 +111,7 @@ func (h *UserHandler) handleUpdateUser(c *fiber.Ctx) error {
 
 func (h *UserHandler) SetRoutes(app *fiber.App) {
 	app.Get("/users", h.handleGetUsers)
+	app.Get("/users/:id<int>", h.handleGetUserById)
 	app.Post("/users", h.handleCreateUser)
 	app.Delete("/users/:id", h.handleDeleteUser)
 	app.Put("/users/:id", h.handleUpdateUser)
