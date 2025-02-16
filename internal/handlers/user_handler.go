@@ -5,6 +5,10 @@ import (
 	"staj-resftul/internal/models"
 	"staj-resftul/internal/services"
 
+	"github.com/go-swagno/swagno/components/endpoint"
+	"github.com/go-swagno/swagno/components/http/response"
+	"github.com/go-swagno/swagno/components/mime"
+	"github.com/go-swagno/swagno/components/parameter"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -19,15 +23,11 @@ func NewUserHandler(service *services.UserService) *UserHandler {
 }
 
 func (h *UserHandler) handleGetUsers(c *fiber.Ctx) error {
-	user, err := h.userService.GetUsers()
+	users, err := h.userService.GetUsers()
 	if err != nil {
-		fmt.Println(err)
-		if err != nil {
-			fmt.Println(err)
-			c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err})
-		}
+		c.Status(fiber.StatusInternalServerError).JSON(models.ErrorResponse{Error: err.Error()})
 	}
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{"data": user})
+	return c.Status(fiber.StatusOK).JSON(users)
 }
 
 func (h *UserHandler) handleGetUserById(c *fiber.Ctx) error {
@@ -37,83 +37,136 @@ func (h *UserHandler) handleGetUserById(c *fiber.Ctx) error {
 	}
 
 	user, err := h.userService.GetUserById(userId)
-
 	if err != nil {
-		fmt.Println(err)
-		if err != nil {
-			fmt.Println(err)
-			c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err})
-		}
+		c.Status(fiber.StatusInternalServerError).JSON(models.ErrorResponse{Error: err.Error()})
 	}
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{"data": user})
+
+	return c.Status(fiber.StatusOK).JSON(user)
 }
 
 func (h *UserHandler) handleCreateUser(c *fiber.Ctx) error {
 	userRequest := new(models.UserCreateRequest)
 	if err := c.BodyParser(userRequest); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Geçersiz JSON verisi"})
+		return c.Status(fiber.StatusBadRequest).JSON(models.ErrorResponse{Error: err.Error()})
+	}
+	if err := userRequest.Validate(); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	file, _ := c.FormFile("profile_photo")
 
 	user, err := h.userService.CreateUser(userRequest, file)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(models.ErrorResponse{Error: err.Error()})
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"data": user})
+	return c.Status(fiber.StatusCreated).JSON(user)
 }
 
 func (h *UserHandler) handleDeleteUser(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Geçersiz kullanıcı ID"})
+		return c.Status(fiber.StatusBadRequest).JSON(models.ErrorResponse{Error: "Geçersiz kullanıcı Id"})
 	}
 	err = h.userService.DeleteUser(id)
 	if err != nil {
 		fmt.Println(err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(models.ErrorResponse{Error: err.Error()})
 	}
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Kullanıcı başarıyla silindi", "user_id": id})
+	return c.Status(fiber.StatusOK).JSON(models.SuccessResponse{Message: "user deleted successfuly"})
 }
 
-func (h *UserHandler) handleUpdateUser(c *fiber.Ctx) error {
-	userRequest := models.UserUpdateRequest{}
-	err := c.BodyParser(&userRequest)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Geçersiz JSON verisi"})
-	}
-
+func (h *UserHandler) handleUpdateUserById(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Geçersiz kullanıcı ID"})
+		return c.Status(fiber.StatusBadRequest).JSON(models.ErrorResponse{Error: "Geçersiz kullanıcı ID"})
 	}
 
-	updatedData := map[string]interface{}{}
-	if userRequest.Name != "" {
-		updatedData["name"] = userRequest.Name
-	}
-	if userRequest.Lastname != "" {
-		updatedData["lastname"] = userRequest.Lastname
-	}
-	if userRequest.ProfilePhoto != "" {
-		updatedData["profile_photo"] = userRequest.ProfilePhoto
-	}
-
-	err = h.userService.UpdateUser(id, updatedData)
+	userRequest := models.UserUpdateRequest{}
+	err = c.BodyParser(&userRequest)
 	if err != nil {
-		fmt.Println(err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(fiber.StatusBadRequest).JSON(models.ErrorResponse{Error: err.Error()})
 	}
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Kullanıcı başarıyla güncellendi"})
+	if err := userRequest.Validate(); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	updatedData := models.User{
+		Name:         userRequest.Name,
+		Lastname:     userRequest.Lastname,
+		ProfilePhoto: userRequest.ProfilePhoto,
+	}
+
+	newData, err := h.userService.UpdateUserById(id, updatedData)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(models.ErrorResponse{Error: err.Error()})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(newData)
 }
 
 func (h *UserHandler) SetRoutes(app *fiber.App) {
-	app.Get("/users", h.handleGetUsers)
-	app.Get("/users/:id<int>", h.handleGetUserById)
-	app.Post("/users", h.handleCreateUser)
-	app.Delete("/users/:id", h.handleDeleteUser)
-	app.Put("/users/:id", h.handleUpdateUser)
 
+	userGroup := app.Group("/users")
+	userGroup.Get("/", h.handleGetUsers)
+	userGroup.Get("/:id<int>", h.handleGetUserById)
+	userGroup.Post("/", h.handleCreateUser)
+	userGroup.Delete("/:id<int>", h.handleDeleteUser)
+	userGroup.Put("/:id<int>", h.handleUpdateUserById)
+
+}
+
+var UserEndpoints = []*endpoint.EndPoint{
+	endpoint.New(
+		endpoint.GET,
+		"/users",
+		endpoint.WithTags("user"),
+		endpoint.WithSuccessfulReturns([]response.Response{response.New(
+			models.User{}, "OK", "200")}),
+		endpoint.WithErrors([]response.Response{response.New(models.ErrorResponse{}, "Bad Request", "500")}),
+		endpoint.WithDescription("tüm kullanıcıları döner"),
+	),
+	endpoint.New(
+		endpoint.GET,
+		"/users/{id}",
+		endpoint.WithTags("user"),
+		endpoint.WithParams(parameter.IntParam("id", parameter.Path, parameter.WithRequired(), parameter.WithDescription("Kullanıcı id"))),
+		endpoint.WithSuccessfulReturns([]response.Response{response.New(
+			models.User{}, "OK", "200")}),
+		endpoint.WithErrors([]response.Response{response.New(models.ErrorResponse{}, "Bad Request", "500")}),
+		endpoint.WithDescription("id'e göre kullanıcı döner"),
+	),
+
+	endpoint.New(
+		endpoint.POST,
+		"/users",
+		endpoint.WithTags("user"),
+		endpoint.WithBody(models.UserCreateRequest{}),
+		endpoint.WithConsume([]mime.MIME{mime.MULTIFORM}),
+		endpoint.WithSuccessfulReturns([]response.Response{response.New(
+			models.User{}, "OK", "200")}),
+		endpoint.WithErrors([]response.Response{response.New(models.ErrorResponse{}, "Bad Request", "500")}),
+		endpoint.WithDescription("Yeni kullanıcı oluşturur"),
+	),
+	endpoint.New(
+		endpoint.DELETE,
+		"/users/{id}",
+		endpoint.WithTags("user"),
+		endpoint.WithParams(parameter.IntParam("id", parameter.Path, parameter.WithRequired(), parameter.WithDescription("Kullanıcı id"))),
+		endpoint.WithSuccessfulReturns([]response.Response{response.New(models.SuccessResponse{}, "OK", "200")}),
+		endpoint.WithErrors([]response.Response{response.New(models.ErrorResponse{}, "Bad Request", "500")}),
+		endpoint.WithDescription("Kullanıcı silinir"),
+	),
+	endpoint.New(
+		endpoint.PUT,
+		"/users/{id}",
+		endpoint.WithTags("user"),
+		endpoint.WithParams(parameter.IntParam("id", parameter.Path, parameter.WithRequired())),
+		endpoint.WithBody(models.UserUpdateRequest{}),
+		endpoint.WithSuccessfulReturns([]response.Response{response.New(
+			models.User{}, "OK", "200")}),
+		endpoint.WithErrors([]response.Response{response.New(models.ErrorResponse{}, "Bad Request", "500")}),
+		endpoint.WithDescription("Kullanıcı bilgilerini günceller"),
+	),
 }

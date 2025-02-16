@@ -26,30 +26,21 @@ func NewUserService(repository *repositories.UserRepository, redisdb *redis.Redi
 }
 
 func (s *UserService) GetUsers() ([]models.User, error) {
-	redisResult := s.redisDB.RedisClient.Get("users")
-	users := []models.User{}
-	json.Unmarshal([]byte(redisResult.String()), &users)
-
-	if len(users) != 0 {
+	users, err := s.getUsersFromCache()
+	if err == nil {
 		return users, nil
 	}
 
-	result, err := s.userRepository.GetUsers()
+	users, err = s.userRepository.GetUsers()
 	if err != nil {
-		return []models.User{}, err
+		return nil, err
 	}
 
-	data, err := json.Marshal(result)
+	err = s.saveUsersToCache(users)
 	if err != nil {
-		return []models.User{}, err
+		return nil, err
 	}
-
-	err = s.redisDB.RedisClient.Set("users", data, time.Minute*5).Err()
-	if err != nil {
-		return []models.User{}, err
-	}
-
-	return result, nil
+	return users, nil
 }
 
 func (s *UserService) GetUserById(userId int) (*models.User, error) {
@@ -115,6 +106,36 @@ func (s *UserService) DeleteUser(id int) error {
 	return s.userRepository.DeleteUserByID(id)
 }
 
-func (s *UserService) UpdateUser(id int, updatedData map[string]interface{}) error {
-	return s.userRepository.UpdateUser(id, updatedData)
+func (s *UserService) UpdateUserById(userId int, updatedData models.User) (models.User, error) {
+
+	newData, err := s.userRepository.UpdateUserById(userId, updatedData)
+	if err != nil {
+		return models.User{}, err
+	}
+
+	return newData, nil
+
+}
+
+func (s *UserService) getUsersFromCache() ([]models.User, error) {
+	redisResult, err := s.redisDB.RedisClient.Get("users").Result()
+	if err != nil || redisResult == "" {
+		return nil, err
+	}
+
+	users := models.User{}
+	if err := json.Unmarshal([]byte(redisResult), &users); err != nil {
+		return nil, err
+	}
+
+	return []models.User{}, nil
+}
+
+func (s *UserService) saveUsersToCache(users []models.User) error {
+	data, err := json.Marshal(users)
+	if err != nil {
+		return err
+	}
+
+	return s.redisDB.RedisClient.Set("users", data, time.Minute*5).Err()
 }

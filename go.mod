@@ -35,8 +35,12 @@ require (
 	github.com/go-openapi/jsonreference v0.21.0 // indirect
 	github.com/go-openapi/spec v0.21.0 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect
+	github.com/go-ozzo/ozzo-validation v3.6.0+incompatible // indirect
 	github.com/go-redis/redis v6.15.9+incompatible // indirect
 	github.com/go-redis/redis/v8 v8.11.5 // indirect
+	github.com/go-swagno/swagno v1.2.5 // indirect
+	github.com/go-swagno/swagno-fiber v1.0.0 // indirect
+	github.com/go-swagno/swagno-files v0.1.3 // indirect
 	github.com/gofiber/fiber/v2 v2.52.6 // indirect
 	github.com/gofiber/fiber/v3 v3.0.0-beta.4 // indirect
 	github.com/gofiber/schema v1.2.0 // indirect

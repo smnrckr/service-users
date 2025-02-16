@@ -12,6 +12,8 @@ import (
 	"staj-resftul/utils"
 	"strconv"
 
+	"github.com/go-swagno/swagno"
+	"github.com/go-swagno/swagno-fiber/swagger"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -56,6 +58,10 @@ func main() {
 	userService := services.NewUserService(userRepository, rdb, s3)
 	userHandler := handlers.NewUserHandler(userService)
 	app := fiber.New()
+
+	sw := swagno.New(swagno.Config{Title: "Service Favorites", Version: "v1.0.0", Host: "localhost:8080"})
+	sw.AddEndpoints(handlers.UserEndpoints)
+	swagger.SwaggerHandler(app, sw.MustToJson(), swagger.WithPrefix("/swagger"))
 
 	userHandler.SetRoutes(app)
 
