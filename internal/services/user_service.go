@@ -5,19 +5,29 @@ import (
 	"fmt"
 	"mime/multipart"
 	"staj-resftul/internal/models"
-	"staj-resftul/internal/repositories"
 	"staj-resftul/pkg/redis"
-	"staj-resftul/pkg/s3storage"
 	"time"
 )
 
-type UserService struct {
-	userRepository *repositories.UserRepository
-	redisDB        *redis.RedisDB
-	s3Service      *s3storage.S3Service
+type UserRepositoryInterface interface {
+	GetUsers() ([]models.User, error)
+	GetUserById(userId int) (*models.User, error)
+	CreateUser(user *models.User) error
+	DeleteUserByID(id int) error
+	UpdateUserById(userId int, updatedData models.User) (models.User, error)
 }
 
-func NewUserService(repository *repositories.UserRepository, redisdb *redis.RedisDB, s3Service *s3storage.S3Service) *UserService {
+type S3ServiceInterface interface {
+	UploadFile(BucketName string, Key string, Body []byte) (string, error)
+}
+
+type UserService struct {
+	userRepository UserRepositoryInterface
+	redisDB        *redis.RedisDB
+	s3Service      S3ServiceInterface
+}
+
+func NewUserService(repository UserRepositoryInterface, redisdb *redis.RedisDB, s3Service S3ServiceInterface) *UserService {
 	return &UserService{
 		userRepository: repository,
 		redisDB:        redisdb,

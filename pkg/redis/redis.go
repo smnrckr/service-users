@@ -1,8 +1,11 @@
 package redis
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
+	"staj-resftul/internal/models"
+	"time"
 
 	"github.com/go-redis/redis"
 )
@@ -32,4 +35,27 @@ func NewClient(config RedisConfig) *RedisDB {
 	fmt.Println("connection successful")
 
 	return &RedisDB{RedisClient: rdb}
+}
+
+func (r *RedisDB) GetUsersFromCache() ([]models.User, error) {
+	redisResult, err := r.RedisClient.Get("users").Result()
+	if err != nil || redisResult == "" {
+		return nil, err
+	}
+
+	var users []models.User
+	if err := json.Unmarshal([]byte(redisResult), &users); err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+func (r *RedisDB) SaveUsersToCache(users []models.User) error {
+	data, err := json.Marshal(users)
+	if err != nil {
+		return err
+	}
+
+	return r.RedisClient.Set("users", data, time.Minute*5).Err()
 }
