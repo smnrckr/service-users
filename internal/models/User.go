@@ -34,16 +34,16 @@ func (f UserCreateRequest) Validate() error {
 	)
 }
 
-func (f UserUpdateRequest) Validate() error {
-	return validation.ValidateStruct(&f,
-		validation.Field(&f.Name, validation.Length(2, 50).Error("name 2-50 karakter arasında olmalı")),
-		validation.Field(&f.Lastname, validation.Length(2, 50).Error("lastname 2-50 karakter arasında olmalı")),
-		validation.Field(&f.ProfilePhoto, validation.NilOrNotEmpty.Error("geçersiz profile fotoğrafı")),
-	)
-}
-
 type UserUpdateRequest struct {
 	Name         string `json:"name"`
 	Lastname     string `json:"lastname"`
 	ProfilePhoto string `json:"profile_photo"`
+}
+
+func (f UserUpdateRequest) Validate() error {
+	return validation.ValidateStruct(&f,
+		validation.Field(&f.Name, validation.NilOrNotEmpty, validation.Length(2, 50).Error("name 2-50 karakter arasında olmalı")),
+		validation.Field(&f.Lastname, validation.NilOrNotEmpty, validation.Length(2, 50).Error("lastname 2-50 karakter arasında olmalı")),
+		validation.Field(&f.ProfilePhoto, validation.NilOrNotEmpty, validation.NilOrNotEmpty.Error("geçersiz profile fotoğrafı")),
+	)
 }

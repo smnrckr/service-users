@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"fmt"
+	"mime/multipart"
 	"staj-resftul/internal/models"
-	"staj-resftul/internal/services"
 
 	"github.com/go-swagno/swagno/components/endpoint"
 	"github.com/go-swagno/swagno/components/http/response"
@@ -12,11 +12,19 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type UserHandler struct {
-	userService *services.UserService
+type UserServiceInterface interface {
+	GetUsers() ([]models.User, error)
+	GetUserById(userId int) (*models.User, error)
+	CreateUser(req *models.UserCreateRequest, file *multipart.FileHeader) (*models.User, error)
+	DeleteUser(id int) error
+	UpdateUserById(userId int, updatedData models.User) (models.User, error)
 }
 
-func NewUserHandler(service *services.UserService) *UserHandler {
+type UserHandler struct {
+	userService UserServiceInterface
+}
+
+func NewUserHandler(service UserServiceInterface) *UserHandler {
 	return &UserHandler{
 		userService: service,
 	}
@@ -123,7 +131,7 @@ var UserEndpoints = []*endpoint.EndPoint{
 		"/users",
 		endpoint.WithTags("user"),
 		endpoint.WithSuccessfulReturns([]response.Response{response.New(
-			models.User{}, "OK", "200")}),
+			[]models.User{}, "OK", "200")}),
 		endpoint.WithErrors([]response.Response{response.New(models.ErrorResponse{}, "Bad Request", "500")}),
 		endpoint.WithDescription("tüm kullanıcıları döner"),
 	),

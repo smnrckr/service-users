@@ -72,7 +72,7 @@ func (r *UserRepository) UpdateUserById(id int, updatedData models.User) (models
 
 //docker kullan TAMAM
 //gerçek dbye bağlan TAMAM
-//db özelliklerini elle yazmak yerin env. dosyasından al TAMAM, unit test ekle, swagger ekle
+//db özelliklerini elle yazmak yerin env. dosyasından al TAMAM, unit test ekle TAMAM, swagger ekle TAMAM
 //2.gün -> user her profil sayfasına gittiğinde dbye gitmek yerine redis'te cashlensin TAMAM, (rediste varsa yoksa dbden okuyup redise yazsın)
 //dosya s3'e nasıl yüklenir bak TAMAM
 //3.gün -> amazonda makine oluştur TAMAM, redis kur TAMAM, postgrl sql olutur TAMAM, amazonda çalışır hale getir

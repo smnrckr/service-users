@@ -5,29 +5,33 @@ import (
 	"fmt"
 	"mime/multipart"
 	"staj-resftul/internal/models"
-	"staj-resftul/pkg/redis"
 	"time"
 )
 
-type UserRepositoryInterface interface {
+type UserRepository interface {
 	GetUsers() ([]models.User, error)
 	GetUserById(userId int) (*models.User, error)
-	CreateUser(user *models.User) error
+	CreateUser(newUser *models.User) error
 	DeleteUserByID(id int) error
 	UpdateUserById(userId int, updatedData models.User) (models.User, error)
 }
 
-type S3ServiceInterface interface {
+type RedisDB interface {
+	Get(key string) (string, error)
+	Set(key string, value interface{}, expiration time.Duration) error
+}
+
+type S3Service interface {
 	UploadFile(BucketName string, Key string, Body []byte) (string, error)
 }
 
 type UserService struct {
-	userRepository UserRepositoryInterface
-	redisDB        *redis.RedisDB
-	s3Service      S3ServiceInterface
+	userRepository UserRepository
+	redisDB        RedisDB
+	s3Service      S3Service
 }
 
-func NewUserService(repository UserRepositoryInterface, redisdb *redis.RedisDB, s3Service S3ServiceInterface) *UserService {
+func NewUserService(repository UserRepository, redisdb RedisDB, s3Service S3Service) *UserService {
 	return &UserService{
 		userRepository: repository,
 		redisDB:        redisdb,
@@ -40,8 +44,9 @@ func (s *UserService) GetUsers() ([]models.User, error) {
 	if err == nil {
 		return users, nil
 	}
-
+	fmt.Println("cacheden veri gelmedi")
 	users, err = s.userRepository.GetUsers()
+	fmt.Println("users dbden getirildi")
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +60,7 @@ func (s *UserService) GetUsers() ([]models.User, error) {
 
 func (s *UserService) GetUserById(userId int) (*models.User, error) {
 
-	redisResult, err := s.redisDB.RedisClient.Get("users").Result()
+	redisResult, err := s.redisDB.Get("users")
 	users := []models.User{}
 	if err == nil && redisResult != "" {
 		if err := json.Unmarshal([]byte(redisResult), &users); err == nil {
@@ -128,17 +133,17 @@ func (s *UserService) UpdateUserById(userId int, updatedData models.User) (model
 }
 
 func (s *UserService) getUsersFromCache() ([]models.User, error) {
-	redisResult, err := s.redisDB.RedisClient.Get("users").Result()
+	redisResult, err := s.redisDB.Get("users")
 	if err != nil || redisResult == "" {
 		return nil, err
 	}
 
-	users := models.User{}
+	users := []models.User{}
 	if err := json.Unmarshal([]byte(redisResult), &users); err != nil {
 		return nil, err
 	}
 
-	return []models.User{}, nil
+	return users, nil
 }
 
 func (s *UserService) saveUsersToCache(users []models.User) error {
@@ -147,5 +152,5 @@ func (s *UserService) saveUsersToCache(users []models.User) error {
 		return err
 	}
 
-	return s.redisDB.RedisClient.Set("users", data, time.Minute*5).Err()
+	return s.redisDB.Set("users", data, time.Minute*5)
 }
