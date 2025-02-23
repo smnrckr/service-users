@@ -58,13 +58,8 @@ func main() {
 	userService := services.NewUserService(userRepository, rdb, s3)
 	userHandler := handlers.NewUserHandler(userService)
 	app := fiber.New()
-	app.Use(cors.New(cors.Config{
-        	AllowOrigins: "*",  // Bu, her yerden gelen istekleri kabul eder
-        	AllowMethods: "GET,POST,PUT,DELETE",  // İzin verilen HTTP metodları
-        	AllowHeaders: "Origin, Content-Type, Accept",  // İzin verilen başlıklar
-    	}))
 
-	sw := swagno.New(swagno.Config{Title: "Service Favorites", Version: "v1.0.0", Host: "50.16.42.75:8080", BasePath: "/"})
+	sw := swagno.New(swagno.Config{Title: "Service Favorites", Version: "v1.0.0", Host: "50.16.42.75:8080"})
 	sw.AddEndpoints(handlers.UserEndpoints)
 	swagger.SwaggerHandler(app, sw.MustToJson(), swagger.WithPrefix("/swagger"))
 
