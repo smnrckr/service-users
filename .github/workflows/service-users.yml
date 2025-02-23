@@ -38,16 +38,20 @@ jobs:
 
       - name: Login to AWS ECR
         run: |
-          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin 565393060276.dkr.ecr.us-east-1.amazonaws.com
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin 565393060276.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
 
       - name: Tag Docker image
         run: |
-          docker tag smnrckrc/service-users:${GITHUB_SHA} 565393060276.dkr.ecr.us-east-1.amazonaws.com/service-users:${GITHUB_SHA}
+          docker tag smnrckrc/service-users:${GITHUB_SHA} 565393060276.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/service-users:${GITHUB_SHA}
 
       - name: Push Docker image to ECR
         run: |
-          docker push 565393060276.dkr.ecr.us-east-1.amazonaws.com/service-users:${GITHUB_SHA}
+          docker push 565393060276.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/service-users:${GITHUB_SHA}
 
       - name: Deploy to AWS EC2
         run: |
-          ssh -i "${{ secrets.SSH_PRIVATE_KEY }}" ubuntu@50.16.42.75 "docker pull 565393060276.dkr.ecr.us-east-1.amazonaws.com/service-users:${GITHUB_SHA} && docker run -d -p 8080:8080 565393060276.dkr.ecr.us-east-1.amazonaws.com/service-users:${GITHUB_SHA}"
+          ssh -i "${{ secrets.SSH_PRIVATE_KEY }}" ubuntu@50.16.42.75 "docker pull 565393060276.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/service-users:${GITHUB_SHA} && docker run -d -p 8080:8080 565393060276.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/service-users:${GITHUB_SHA}"
