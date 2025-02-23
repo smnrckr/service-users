@@ -30,7 +30,7 @@ jobs:
         run: go test ./...
 
       - name: Build the application
-        run: go build -o service-users ./cmd/service-users
+        run: go build -o service-users ./cmd
 
       - name: Build Docker image
         run: |
