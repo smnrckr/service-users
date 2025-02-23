@@ -1,0 +1,16 @@
+[Unit]
+Description=Service Users API
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/path/to/your/service-users/cmd/service-users # Uygulamanızın çalıştırılabilir dosyasının tam yolu
+WorkingDirectory=/path/to/your/service-users/cmd # Uygulamanızın çalışma dizini
+Restart=always
+User=ubuntu # Kullanıcı adı (genellikle 'ubuntu' olabilir)
+Environment="AWS_ACCESS_KEY_ID=your_access_key"
+Environment="AWS_SECRET_ACCESS_KEY=your_secret_key"
+Environment="AWS_REGION=your_region"
+
+[Install]
+WantedBy=multi-user.target
