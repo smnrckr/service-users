@@ -3,10 +3,10 @@ name: CI/CD for Service Users
 on:
   push:
     branches:
-      - main 
+      - main
   pull_request:
     branches:
-      - main 
+      - main
 
 jobs:
   build:
@@ -36,21 +36,18 @@ jobs:
         run: |
           docker build -t smnrckrc/service-users:${GITHUB_SHA} .
 
-      # 7. Login to AWS ECR
       - name: Login to AWS ECR
         run: |
-          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin 565393060276.dkr.ecr.us-east-1.amazonaws.com
 
       - name: Tag Docker image
         run: |
-          docker tag smnrckrc/service-users:${GITHUB_SHA} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/service-users:${GITHUB_SHA}
+          docker tag smnrckrc/service-users:${GITHUB_SHA} 565393060276.dkr.ecr.us-east-1.amazonaws.com/service-users:${GITHUB_SHA}
 
-      # 9. Push Docker image to ECR
       - name: Push Docker image to ECR
         run: |
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/service-users:${GITHUB_SHA}
+          docker push 565393060276.dkr.ecr.us-east-1.amazonaws.com/service-users:${GITHUB_SHA}
 
       - name: Deploy to AWS EC2
         run: |
-          ssh -i "cimri-staj" ubuntu@50.16.42.75 "docker pull ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/service-users:${GITHUB_SHA} && docker run -d -p 8080:8080 your-docker-username/service-users:${GITHUB_SHA}"
-
+          ssh -i "${{ secrets.SSH_PRIVATE_KEY }}" ubuntu@50.16.42.75 "docker pull 565393060276.dkr.ecr.us-east-1.amazonaws.com/service-users:${GITHUB_SHA} && docker run -d -p 8080:8080 565393060276.dkr.ecr.us-east-1.amazonaws.com/service-users:${GITHUB_SHA}"
