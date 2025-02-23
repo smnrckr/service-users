@@ -1,0 +1,56 @@
+name: CI/CD for Service Users
+
+on:
+  push:
+    branches:
+      - main 
+  pull_request:
+    branches:
+      - main 
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.23.5'
+
+      - name: Install dependencies
+        run: |
+          go mod tidy
+          go mod vendor
+
+      - name: Run tests
+        run: go test ./...
+
+      - name: Build the application
+        run: go build -o service-users ./cmd/service-users
+
+      - name: Build Docker image
+        run: |
+          docker build -t smnrckrc/service-users:${GITHUB_SHA} .
+
+      # 7. Login to AWS ECR
+      - name: Login to AWS ECR
+        run: |
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+
+      - name: Tag Docker image
+        run: |
+          docker tag smnrckrc/service-users:${GITHUB_SHA} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/service-users:${GITHUB_SHA}
+
+      # 9. Push Docker image to ECR
+      - name: Push Docker image to ECR
+        run: |
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/service-users:${GITHUB_SHA}
+
+      - name: Deploy to AWS EC2
+        run: |
+          ssh -i "cimri-staj" ubuntu@50.16.42.75 "docker pull ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/service-users:${GITHUB_SHA} && docker run -d -p 8080:8080 your-docker-username/service-users:${GITHUB_SHA}"
+
